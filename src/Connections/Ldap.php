@@ -252,7 +252,14 @@ class Ldap implements ConnectionInterface
     public function bind($username, $password, $sasl = false)
     {
         if ($this->isUsingTLS()) {
-            $this->startTLS();
+            $tlsOK = $this->startTLS();
+            if (!$tlsOK) {
+                $errorNumber = ldap_errno($this->connection);
+                $errorString = ldap_error($this->connection);
+                ldap_get_option($this->connection, LDAP_OPT_DIAGNOSTIC_MESSAGE, $diag);
+                $errormsg = "$errorNumber: $errorString! $diag";
+                throw new \Exception('TLS failed!' . ' ' . $errormsg);
+            }
         }
 
         if ($sasl) {
